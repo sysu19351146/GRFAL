@@ -30,7 +30,7 @@ For running the codes, following files/folders should be in the [root_dir]/celeb
 - `data/list_attr_celeba.csv`
 - `data/img_align_celeba/`
 
-## training
+## Training
 
 ### Waterbirds
 Run the following command for Waterbirds
@@ -54,6 +54,10 @@ or
 ```
  python run_expt.py -s confounder -d Skin -t Blond_Hair -c Male --lr 0.0001 --batch_size 32 --weight_decay 0.00005 --model resnet50 --n_epochs 200 --gamma 0.1 --generalization_adjustment 2 --train_type WAT --log_dir_text log_32.txt --test_type pgd --random_init 0.0001 --epsilon 0.00196 --attack_iters 10 --lamda 1 --tau 0.01 --alpha_ 0.01 --gpu 0  --name_index robustnew10  --log_dir '/share_data/cap_udr_test'  --l2_norm 0.00 --lr_tau 0.0  --beta 6.0   --clmax 1.0  --clmin 0.0    --robust --trades_new     --train_grad  --limit_nat --limit_adv --reweight_groups  --class_num 4
 ```
+
+
+## Acknowledgement
+This repo is built upon [Group-DRO](https://github.com/kohpangwei/group_DRO). We thank the authors for their great work.
 
 
 
