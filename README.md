@@ -35,7 +35,7 @@ For running the codes, following files/folders should be in the [root_dir]/celeb
 ### Waterbirds
 Run the following command for Waterbirds
 ```
-sh run_waterbirds.sh
+sh waterbirds.sh
 ```
 or
 ```
@@ -48,7 +48,7 @@ python run_expt.py  -s confounder -d CUB -t waterbird_complete95 -c forest2water
 ### CelebA
 Run the following command for CelebA
 ```
-sh run_celebA.sh
+sh celebA.sh
 ```
 or
 ```
