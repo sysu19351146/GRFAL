@@ -9,19 +9,35 @@ It is well known that deep neural networks(DNN) have achieved high accuracy in m
 
 
 ## Installation 
-
-
+conda create -n myenv python=3.7
+conda activate myenv
+pip install -r requirements.txt
 
 
 
 ## Dataset
+- Waterbirds: see instructions [here](https://github.com/kohpangwei/group_DRO#waterbirds).
+- CelebA: see instruction [here](https://github.com/kohpangwei/group_DRO#celeba).
 
-
-
+Waterbirds:
+For running the codes, following files/folders should be in the [root_dir]/cub directory:
+- `data/waterbird_complete95_forest2water2/`
+- 
+CelebA:
+For running the codes, following files/folders should be in the [root_dir]/celebA directory:
+- `data/list_eval_partition.csv`
+- `data/list_attr_celeba.csv`
+- `data/img_align_celeba/`
 
 ## training
 
 ### Waterbirds
+Run the following command for Waterbirds
 
 
 ### CelebA
+Run the following command for CelebA
+
+
+
+
