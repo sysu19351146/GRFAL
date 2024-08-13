@@ -11,6 +11,8 @@ from data.cub_dataset import CUBDataset
 from data.covid_dataset import CovidDataset
 from data.dro_dataset import DRODataset
 from data.multinli_dataset import MultiNLIDataset
+from data.gdroskin import SkinDataset
+from data.cifar10 import CifarDataset
 
 ################
 ### SETTINGS ###
@@ -29,6 +31,13 @@ confounder_settings = {
     'Covid':{
         'constructor': CovidDataset
     },
+    'Skin':{
+        'constructor': SkinDataset
+    },
+    'Cifar':{
+'constructor': CifarDataset
+    }
+
 }
 
 ########################

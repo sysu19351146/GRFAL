@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torchvision
 
-from models import model_attributes
+from models import model_attributes,PreActResNet18
 from data.data import dataset_attributes, shift_types, prepare_data, log_data
 from utils import set_seed, Logger, CSVBatchLogger, log_args
 from train import train
@@ -33,6 +33,7 @@ def main():
     parser.add_argument('--reweight_groups', action='store_true', default=False)
     parser.add_argument('--augment_data', action='store_true', default=False)
     parser.add_argument('--val_fraction', type=float, default=0.1)
+    parser.add_argument('--class_num', default=2, type=int)
     # Objective
     parser.add_argument('--robust', default=False, action='store_true')
     parser.add_argument('--alpha', type=float, default=0.2)
@@ -52,6 +53,7 @@ def main():
 
     # Optimization
     parser.add_argument('--n_epochs', type=int, default=4)
+    parser.add_argument('--n_classes', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--scheduler', action='store_true', default=False)
@@ -63,8 +65,8 @@ def main():
     parser.add_argument('--show_progress', default=False, action='store_true')
     parser.add_argument('--log_dir', default='./logs')
     parser.add_argument('--log_dir_text', default='log.txt')
-    parser.add_argument('--log_every', default=50, type=int)
-    parser.add_argument('--save_step', type=int, default=10)
+    parser.add_argument('--log_every', default=2000, type=int)
+    parser.add_argument('--save_step', type=int, default=100)
     parser.add_argument('--save_best', action='store_true', default=True)
     parser.add_argument('--save_last', action='store_true', default=True)
     parser.add_argument('--train_type',  default="erm")
@@ -78,6 +80,7 @@ def main():
     parser.add_argument('--lamda', default=0.03, type=float)
     parser.add_argument('--alpha_', default=0.03, type=float)
     parser.add_argument('--beta', default=1.0, type=float)
+    parser.add_argument('--eta', default=0.1, type=float)
     parser.add_argument('--random_init', default=0.01,type=float)
     parser.add_argument('--attack_iters', default=10,type=int)
     parser.add_argument('--name_index',default='unit', type=str)
@@ -86,6 +89,13 @@ def main():
     parser.add_argument('--l2_norm', default=0.0, type=float)
     parser.add_argument('--early_stop', default=False, action='store_true')
     parser.add_argument('--is_combine', default=False, action='store_true')
+    parser.add_argument('--limit_nat', default=False, action='store_true')
+    parser.add_argument('--limit_adv', default=False, action='store_true')
+    parser.add_argument('--train_grad', default=False, action='store_true')
+    parser.add_argument('--trades_new', default=False, action='store_true')
+    parser.add_argument('--limit_eps', default=0.2, type=float)
+    parser.add_argument('--pth_name', default='', type=str)
+
 
 
     args = parser.parse_args()
@@ -153,10 +163,10 @@ def main():
     ## Initialize model
     pretrained = not args.train_from_scratch
     if resume:
-        model=torch.load(os.path.join(args.log_dir, args.name_index+'best_model.pth'), map_location={'cuda:2':'cuda:0'})
+        model=torch.load(os.path.join('/share_data/cap_udr_test', args.pth_name+'robustnew10best_test_model.pth'), map_location={'cuda:2':'cuda:2'})
         #model.load_state_dict(checkpoint)
         #model = torch.load(os.path.join(args.log_dir, '25_model.pth'))
-        d = train_data.input_size()[0]
+        #d = train_data.input_size()[0]
     elif model_attributes[args.model]['feature_type'] in ('precomputed', 'raw_flattened'):
         assert pretrained
         # Load precomputed features
@@ -176,6 +186,9 @@ def main():
         model = torchvision.models.wide_resnet50_2(pretrained=pretrained)
         d = model.fc.in_features
         model.fc = nn.Linear(d, n_classes)
+    elif args.model == 'pre18':
+        model = PreActResNet18()
+
     elif args.model == 'bert':
         assert args.dataset == 'MultiNLI'
 
@@ -205,7 +218,7 @@ def main():
         args.cuda=True
         args.eigen_smooth=True
         args.aug_smooth = True
-        gradcam.gradcam_visual(model,args)
+        gradcam.show_visual_model(model,args)
 
     logger.flush()
 
@@ -259,11 +272,13 @@ def set_output_dir(args):
     # if args.exp_mode == "pretrain":
     args.log_dir = os.path.join(args.log_dir,
                                  f'{n}-'
+                                 f'{args.dataset}-'
                                  f'{args.train_type}-'
                                  f'{args.test_type}-re'
                                  f'{args.reweight_groups}-ro'
                                  f'{args.robust}-'
-                                 f'{args.name_index}')
+                                 f'{args.random_init}'
+                                 f'{args.epsilon}')
 
     # if not os.path.exists(args.base_dir):
     #     os.makedirs(args.base_dir, 0o700)

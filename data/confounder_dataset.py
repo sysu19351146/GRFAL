@@ -39,7 +39,7 @@ class ConfounderDataset(Dataset):
                 img = img.view(-1)
             x = img
 
-        return x,y,g
+        return x,y,g,idx
 
     def get_splits(self, splits, train_frac=1.0):
         subsets = {}

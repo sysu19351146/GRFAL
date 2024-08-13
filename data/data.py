@@ -22,6 +22,12 @@ dataset_attributes = {
     },
     'Covid': {
         'root_dir': 'dataset'
+    },
+    'Skin':  {
+        'root_dir': ''
+    },
+'Cifar':  {
+        'root_dir': ''
     }
 }
 

@@ -8,7 +8,7 @@ from models import model_attributes
 from torch.utils.data import Dataset, Subset
 from data.confounder_dataset import ConfounderDataset
 
-class CUBDataset(ConfounderDataset):
+class SkinDataset(ConfounderDataset):
     """
     CUB dataset (already cropped and centered).
     Note: metadata_df is one-indexed.
@@ -24,25 +24,26 @@ class CUBDataset(ConfounderDataset):
         self.model_type = model_type
         self.augment_data = augment_data
 
-        self.data_dir = os.path.join(
-            self.root_dir,
-            'data',
-            '_'.join([self.target_name] + self.confounder_names))
-
-        if not os.path.exists(self.data_dir):
-            raise ValueError(
-                f'{self.data_dir} does not exist yet. Please generate the dataset first.')
+        # self.data_dir = os.path.join(
+        #     self.root_dir,
+        #     'data',
+        #     '_'.join([self.target_name] + self.confounder_names))
+        #
+        # if not os.path.exists(self.data_dir):
+        #     raise ValueError(
+        #         f'{self.data_dir} does not exist yet. Please generate the dataset first.')
+        self.data_dir=''
 
         # Read in metadata
         self.metadata_df = pd.read_csv(
-            os.path.join(self.data_dir, 'metadata.csv'))
+            os.path.join('/share_data/dataset/gdroskin', 'metadata4.csv'))
 
         # Get the y values
         self.y_array = self.metadata_df['y'].values
         self.n_classes = 2
 
         # We only support one confounder for CUB for now
-        self.confounder_array = self.metadata_df['place'].values
+        self.confounder_array = self.metadata_df['group'].values
         self.n_confounders = 1
         # Map to groups
         self.n_groups = pow(2, 2)
@@ -65,11 +66,11 @@ class CUBDataset(ConfounderDataset):
             self.eval_transform = None
         else:
             self.features_mat = None
-            self.train_transform = get_transform_cub(
+            self.train_transform = get_transform_skin(
                 self.model_type,
                 train=True,
                 augment_data=augment_data)
-            self.eval_transform = get_transform_cub(
+            self.eval_transform = get_transform_skin(
                 self.model_type,
                 train=False,
                 augment_data=augment_data)
@@ -78,7 +79,7 @@ class CUBDataset(ConfounderDataset):
         return self.y_array,self.group_array
 
 
-def get_transform_cub(model_type, train, augment_data):
+def get_transform_skin(model_type, train, augment_data):
     scale = 256.0/224.0
     target_resolution = model_attributes[model_type]['target_resolution']
     assert target_resolution is not None
