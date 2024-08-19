@@ -22,8 +22,9 @@ def main():
     # Confounders
     parser.add_argument('-t', '--target_name')
     parser.add_argument('-c', '--confounder_names', nargs='+')
-    # Resume?
+    # Resume
     parser.add_argument('--resume', default=False, action='store_true')
+    parser.add_argument('--pth_name', default='', type=str)
     # Label shifts
     parser.add_argument('--minority_fraction', type=float)
     parser.add_argument('--imbalance_ratio', type=float)
@@ -39,7 +40,6 @@ def main():
     parser.add_argument('--alpha', type=float, default=0.2)
     parser.add_argument('--generalization_adjustment', default="0.0")
     parser.add_argument('--automatic_adjustment', default=False, action='store_true')
-    parser.add_argument('--robust_step_size', default=0.01, type=float)
     parser.add_argument('--use_normalized_loss', default=False, action='store_true')
     parser.add_argument('--btl', default=False, action='store_true')
     parser.add_argument('--hinge', default=False, action='store_true')
@@ -60,47 +60,60 @@ def main():
     parser.add_argument('--weight_decay', type=float, default=5e-5)
     parser.add_argument('--gamma', type=float, default=0.1)
     parser.add_argument('--minimum_variational_weight', type=float, default=0)
-    # Misc
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--show_progress', default=False, action='store_true')
+
+
+    #log
     parser.add_argument('--log_dir', default='./logs')
     parser.add_argument('--log_dir_text', default='log.txt')
+    parser.add_argument('--name_index', default='unit', type=str)
     parser.add_argument('--log_every', default=2000, type=int)
     parser.add_argument('--save_step', type=int, default=100)
     parser.add_argument('--save_best', action='store_true', default=True)
     parser.add_argument('--save_last', action='store_true', default=True)
+
+    #training
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--show_progress', default=False, action='store_true')
     parser.add_argument('--train_type',  default="erm")
-    parser.add_argument('--test_type', default="noAT")
-    parser.add_argument('--zennit_show',  default=False, action='store_true')
+    parser.add_argument('--test_type', default="erm")
     parser.add_argument('--only_test', default=False, action='store_true')
     parser.add_argument('--gpu', default='0')
+    parser.add_argument('--early_stop', default=False, action='store_true')
+    parser.add_argument('--is_combine', default=False, action='store_true')
+
+
+    #adversarial attack
     parser.add_argument('--epsilon', default=0.03,type=float)
+    parser.add_argument('--random_init', default=0.01, type=float)
+    parser.add_argument('--attack_iters', default=10, type=int)
+    parser.add_argument('--clmax', default=1.0, type=float)
+    parser.add_argument('--clmin', default=0.0, type=float)
+
+
+    #visualization
+    parser.add_argument('--zennit_show',  default=False, action='store_true')
+
+    #hyperparamters for other mdoels
+    parser.add_argument('--beta', default=1.0, type=float)
+    parser.add_argument('--eta', default=0.1, type=float)
     parser.add_argument('--tau', default=0.03, type=float)
     parser.add_argument('--lr_tau', default=0.004, type=float)
     parser.add_argument('--lamda', default=0.03, type=float)
     parser.add_argument('--alpha_', default=0.03, type=float)
-    parser.add_argument('--beta', default=1.0, type=float)
-    parser.add_argument('--eta', default=0.1, type=float)
-    parser.add_argument('--random_init', default=0.01,type=float)
-    parser.add_argument('--attack_iters', default=10,type=int)
-    parser.add_argument('--name_index',default='unit', type=str)
-    parser.add_argument('--clmax', default=3.0, type=float)
-    parser.add_argument('--clmin', default=-3.0, type=float)
     parser.add_argument('--l2_norm', default=0.0, type=float)
-    parser.add_argument('--early_stop', default=False, action='store_true')
-    parser.add_argument('--is_combine', default=False, action='store_true')
+
+    #GDRO-AT
     parser.add_argument('--limit_nat', default=False, action='store_true')
     parser.add_argument('--limit_adv', default=False, action='store_true')
     parser.add_argument('--train_grad', default=False, action='store_true')
     parser.add_argument('--trades_new', default=False, action='store_true')
     parser.add_argument('--limit_eps', default=0.2, type=float)
-    parser.add_argument('--pth_name', default='', type=str)
+    parser.add_argument('--robust_step_size', default=0.01, type=float)
 
 
 
     args = parser.parse_args()
     check_args(args)
-
 
     args.device=torch.device("cuda:{}".format(args.gpu) if torch.cuda.is_available() else "cpu")
 
@@ -118,17 +131,15 @@ def main():
         mode='w'
 
     ## Initialize logs
-
     if not os.path.exists(args.log_dir):
         os.makedirs(args.log_dir)
     args=set_output_dir(args)
     if not os.path.exists(args.log_dir):
         os.makedirs(args.log_dir)
     logger = Logger(args.log_dir+'/'+args.name_index+str(args.only_test)[0]+args.log_dir_text, mode)
+
     # Record args
-
     log_args(args, logger)
-
     set_seed(args.seed)
 
     # Data
@@ -139,16 +150,11 @@ def main():
         train_data, val_data, test_data = prepare_data(args, train=True)
     elif args.shift_type == 'label_shift_step':
         train_data, val_data = prepare_data(args, train=True)
-
-
-
-
     loader_kwargs = {'batch_size':args.batch_size, 'num_workers':0, 'pin_memory':True}
     train_loader = train_data.get_loader(train=True, reweight_groups=args.reweight_groups, **loader_kwargs)
     val_loader = val_data.get_loader(train=False, reweight_groups=None, **loader_kwargs)
     if test_data is not None:
         test_loader = test_data.get_loader(train=False, reweight_groups=None, **loader_kwargs)
-
     data = {}
     data['train_loader'] = train_loader
     data['val_loader'] = val_loader
@@ -157,16 +163,13 @@ def main():
     data['val_data'] = val_data
     data['test_data'] = test_data
     n_classes = train_data.n_classes
-
     log_data(data, logger)
+
 
     ## Initialize model
     pretrained = not args.train_from_scratch
     if resume:
-        model=torch.load(os.path.join('/share_data/cap_udr_test', args.pth_name+'robustnew10best_test_model.pth'), map_location={'cuda:2':'cuda:2'})
-        #model.load_state_dict(checkpoint)
-        #model = torch.load(os.path.join(args.log_dir, '25_model.pth'))
-        #d = train_data.input_size()[0]
+        model=torch.load(args.pth_name)
     elif model_attributes[args.model]['feature_type'] in ('precomputed', 'raw_flattened'):
         assert pretrained
         # Load precomputed features
@@ -174,7 +177,6 @@ def main():
         model = nn.Linear(d, n_classes)
         model.has_aux_logits = False
     elif args.model == 'resnet50':
-        #model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.IMAGENET1K_V1)
         model = torchvision.models.resnet50(pretrained=pretrained)
         d = model.fc.in_features
         model.fc = nn.Linear(d, n_classes)
@@ -188,14 +190,11 @@ def main():
         model.fc = nn.Linear(d, n_classes)
     elif args.model == 'pre18':
         model = PreActResNet18()
-
     elif args.model == 'bert':
         assert args.dataset == 'MultiNLI'
-
         from pytorch_transformers import BertConfig, BertForSequenceClassification
         config_class = BertConfig
         model_class = BertForSequenceClassification
-
         config = config_class.from_pretrained(
             'bert-base-uncased',
             num_labels=3,
@@ -207,12 +206,8 @@ def main():
     else:
         raise ValueError('Model not recognized.')
 
+    #visualization
     if args.zennit_show:
-
-        # from zennit_show import zennit_show
-        # if not os.path.exists('zen{}'.format(args.train_type)):
-        #     os.makedirs('zen{}'.format(args.train_type))
-        # zennit_show(model_name=model, dataset=train_data, relevance_format='zen{}'.format(args.train_type)+'/symmetric3_{sample}.png',input_format='zen{}'.format(args.train_type)+'/input_{sample}.png')
         args.model_name='res'
         args.image_path='zenuni/input_0.png'
         args.cuda=True
@@ -222,6 +217,7 @@ def main():
 
     logger.flush()
 
+    #training
     if not args.zennit_show:
         ## Define the objective
         if args.hinge:
@@ -237,17 +233,11 @@ def main():
             criterion = hinge_loss
         else:
             criterion = torch.nn.CrossEntropyLoss(reduction='none')
-    
-        # if resume:
-        #     df = pd.read_csv(os.path.join(args.log_dir, 'test.csv'))
-        #     epoch_offset = df.loc[len(df)-1,'epoch']+1
-        #     logger.write(f'starting from epoch {epoch_offset}')
-        # else:
-        #     epoch_offset=0
+
         train_csv_logger = CSVBatchLogger(os.path.join(args.log_dir, args.name_index+'train.csv'), train_data.n_groups, mode=mode)
         val_csv_logger =  CSVBatchLogger(os.path.join(args.log_dir, args.name_index+'val.csv'), train_data.n_groups, mode=mode)
         test_csv_logger =  CSVBatchLogger(os.path.join(args.log_dir, args.name_index+'test.csv'), train_data.n_groups, mode=mode)
-    
+
         train(model, criterion, data, logger, train_csv_logger, val_csv_logger, test_csv_logger, args, epoch_offset=0)
     
         train_csv_logger.close()
@@ -264,12 +254,10 @@ def check_args(args):
 
 
 def set_output_dir(args):
-
     if not os.listdir(args.log_dir):
         n = 1
     else:
         n = len(next(os.walk(args.log_dir))[1]) + 1
-    # if args.exp_mode == "pretrain":
     args.log_dir = os.path.join(args.log_dir,
                                  f'{n}-'
                                  f'{args.dataset}-'
@@ -279,9 +267,6 @@ def set_output_dir(args):
                                  f'{args.robust}-'
                                  f'{args.random_init}'
                                  f'{args.epsilon}')
-
-    # if not os.path.exists(args.base_dir):
-    #     os.makedirs(args.base_dir, 0o700)
     return args
 
 

@@ -9,39 +9,45 @@ class LossComputer:
         self.criterion = criterion
         self.is_robust = is_robust
         self.gamma = gamma
-        self.alpha = alpha
-        self.min_var_weight = min_var_weight
-        self.step_size = step_size
-        self.normalize_loss = normalize_loss
-        self.btl = btl
         self.device=device
+        self.model = model
+        self.group_type='Group'    #or CGD
+        #group message
         self.n_groups = dataset.n_groups
         self.group_counts = dataset.group_counts().to(self.device)
         self.group_frac = self.group_counts/self.group_counts.sum()
         self.group_str = dataset.group_str
-        self.model=model
+
+        #other method hyperparameters
         self.l2_norm=l2_norm
+        self.alpha = alpha
+        self.min_var_weight = min_var_weight
+        self.normalize_loss = normalize_loss
+        self.btl = btl
         self.args=args
 
         if adj is not None:
             self.adj = torch.from_numpy(adj).float().to(self.device)
         else:
             self.adj = torch.zeros(self.n_groups).float().to(self.device)
-
         if is_robust:
             assert alpha, 'alpha must be specified'
 
-        # quantities maintained throughout training
+        # GDRO parameters
+        self.step_size = step_size
         self.adv_probs = torch.ones(self.n_groups).to(self.device)/self.n_groups
         self.adv_trade_probs=torch.ones(self.n_groups).to(self.device)/self.n_groups
         self.exp_avg_loss = torch.zeros(self.n_groups).to(self.device)
         self.exp_avg_initialized = torch.zeros(self.n_groups).byte().to(self.device)
         self.adv_trade_probs_max=torch.ones(self.n_groups).to(self.device)/self.n_groups * (1+args.limit_eps)
         self.adv_trade_probs_min = torch.ones(self.n_groups).to(self.device) / self.n_groups * (1-args.limit_eps)
+        #CGD
         self.wts=torch.exp(self.adj / torch.sqrt(self.group_counts))
         self.wts = self.wts / self.wts.sum()
+
         self.reset_stats()
 
+    #compute loss by group-dro
     def loss(self, yhat, y, group_idx=None, is_training=False,trade_loss=None,bert_pgd_loss=False):
         # compute per-sample and per-group losses
         not_robust=self.args.trades_new
@@ -51,124 +57,47 @@ class LossComputer:
                     per_sample_losses =trade_loss[0]
                 else:
                     per_sample_losses =trade_loss[0]+trade_loss[1]
-
             else:
                 per_sample_losses = self.criterion(yhat, y)
+            # compute per-group losses
             group_loss, group_count = self.compute_group_avg(per_sample_losses, group_idx)
             group_acc, group_count = self.compute_group_avg((torch.argmax(yhat,1)==y).float(), group_idx)
 
-
-
             # update historical losses
             self.update_exp_avg_loss(group_loss, group_count)
-
             # compute overall loss
             if self.is_robust and not self.btl:
-                if is_training:
+                if is_training and self.group_type=='CGD':
                     actual_loss, weights = self.compute_robust_loss_cgd(group_loss, group_count)
                 else:
                     actual_loss, weights = self.compute_robust_loss(group_loss, group_count)
-                # actual_loss, weights = self.compute_robust_loss(group_loss, group_count)
             elif self.is_robust and self.btl:
                 actual_loss, weights = self.compute_robust_loss_btl(group_loss, group_count)
             else:
                 actual_loss = per_sample_losses.mean()
                 weights = None
 
-
+            #adversarial parts
             robust_losses=torch.tensor(0.).to(self.device)
             if trade_loss!=None and not_robust:
                 robust_losses, _ = self.compute_group_avg(trade_loss[1], group_idx)
-
                 robust_losses,_=self.compute_adversarial_robust_loss(robust_losses,group_loss)
-
 
             # update stats
             self.update_stats(actual_loss, group_loss, group_acc, group_count, weights)
-            # weight_norm=torch.tensor(0.).to(self.device)
-            # for w in self.model.parameters():
-            #     weight_norm += w.norm().pow(2)
 
-            #return actual_loss
-
-            return actual_loss+robust_losses
-        else:
-
+            return actual_loss+robust_losses   #return both parts
+        else:   #bert
             bert_pgd_loss=self.criterion(yhat, y)
             robust_losses, weights = self.compute_group_avg(bert_pgd_loss, group_idx)
-
             robust_losses, weights = self.compute_adversarial_robust_loss(robust_losses,None)
-
             group_loss, group_count = self.compute_group_avg(bert_pgd_loss, group_idx)
             group_acc, group_count = self.compute_group_avg((torch.argmax(yhat, 1) == y).float(), group_idx)
             self.update_exp_avg_loss(robust_losses, group_count)
             self.update_stats(robust_losses, group_loss, group_acc, group_count, weights)
             return robust_losses
 
-    def loss_adv(self, yhat, y, group_idx=None, is_training=False,trade_loss=None,bert_pgd_loss=False,trades_attack=None):
-        # compute per-sample and per-group losses
-        if trades_attack!=None:
-
-            robust_losses, _ = self.compute_group_avg(trades_attack, group_idx)
-            robust_losses, _ = self.compute_adversarial_robust_loss_adv(robust_losses,_)
-            # update stats
-
-            # weight_norm=torch.tensor(0.).to(self.device)
-            # for w in self.model.parameters():
-            #     weight_norm += w.norm().pow(2)
-
-            # return actual_loss
-
-            return robust_losses
-        else:
-            if not bert_pgd_loss:
-                if trade_loss!=None :
-                    per_sample_losses =trade_loss[0]
-
-                    #per_sample_losses =trade_loss[0]+trade_loss[1]
-
-                else:
-                    per_sample_losses = self.criterion(yhat, y)
-                group_loss, group_count = self.compute_group_avg(per_sample_losses, group_idx)
-                group_acc, group_count = self.compute_group_avg((torch.argmax(yhat,1)==y).float(), group_idx)
-
-                # update historical losses
-                # compute overall loss
-                if self.is_robust and not self.btl:
-                    actual_loss, weights = self.compute_robust_loss_adv(group_loss, group_count)
-                elif self.is_robust and self.btl:
-                    actual_loss, weights = self.compute_robust_loss_btl(group_loss, group_count)
-                else:
-                    actual_loss = per_sample_losses.mean()
-                    weights = None
-
-
-                robust_losses=torch.tensor(0.).to(self.device)
-                if trade_loss!=None:
-                    robust_losses, _ = self.compute_group_avg(trade_loss[1], group_idx)
-                    robust_losses,_=self.compute_adversarial_robust_loss_adv(robust_losses,group_loss)
-                # update stats
-
-                # weight_norm=torch.tensor(0.).to(self.device)
-                # for w in self.model.parameters():
-                #     weight_norm += w.norm().pow(2)
-
-                #return actual_loss
-
-                return actual_loss+robust_losses
-            else:
-
-                bert_pgd_loss=self.criterion(yhat, y)
-                robust_losses, weights = self.compute_group_avg(bert_pgd_loss, group_idx)
-
-                robust_losses, weights = self.compute_adversarial_robust_loss(robust_losses,None)
-
-                group_loss, group_count = self.compute_group_avg(bert_pgd_loss, group_idx)
-                group_acc, group_count = self.compute_group_avg((torch.argmax(yhat, 1) == y).float(), group_idx)
-                # self.update_exp_avg_loss(robust_losses, group_count)
-                # self.update_stats(robust_losses, group_loss, group_acc, group_count, weights)
-                return robust_losses
-
+    #GDRO-AT compute natural distributional weights
     def compute_robust_loss(self, group_loss, group_count):
         adjusted_loss = group_loss
         if torch.all(self.adj>0):
@@ -185,7 +114,6 @@ class LossComputer:
                 self.adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data+self.step_size*1*((prev_weight*self.avg_group_loss.data + curr_weight*adjusted_loss.data-adjusted_loss.data)))
             else:
                 self.adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
-            #self.adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
             if self.args.limit_nat:
                 self.adv_probs = torch.min(self.adv_probs, self.adv_trade_probs_max)
                 self.adv_probs = torch.max(self.adv_probs, self.adv_trade_probs_min)
@@ -202,6 +130,7 @@ class LossComputer:
         robust_loss = group_loss @ self.adv_probs
         return robust_loss, self.adv_probs
 
+    #CGD
     def compute_robust_loss_cgd(self, group_loss, group_count):
 
         params = []
@@ -240,69 +169,20 @@ class LossComputer:
         self.adv_probs = self.adv_probs / self.adv_probs.sum()
         self.adv_probs = torch.clamp(self.adv_probs, min=1e-5)
 
-
-
         robust_loss = group_loss @ self.adv_probs
         return robust_loss, self.adv_probs
 
-
-
-
+    # GDRO-AT compute adversarial  distributional weights
     def compute_adversarial_robust_loss(self, group_loss,per_sample_losses):
         adjusted_loss = group_loss
-        # if torch.all(self.adj>0):
-        #     adjusted_loss += self.adj/torch.sqrt(self.group_counts)
-        # if self.normalize_loss:
-        #     adjusted_loss = adjusted_loss/(adjusted_loss.sum())
         self.adv_trade_probs = self.adv_trade_probs * torch.exp(-self.step_size*adjusted_loss.data)
         if self.args.limit_adv:
             self.adv_trade_probs = torch.min(self.adv_trade_probs,self.adv_trade_probs_max)
             self.adv_trade_probs = torch.max(self.adv_trade_probs, self.adv_trade_probs_min)
         self.adv_trade_probs = self.adv_trade_probs/(self.adv_trade_probs.sum())
 
-
         robust_loss = group_loss @ (self.adv_trade_probs*4)
         return robust_loss, self.adv_trade_probs
-
-    def compute_robust_loss_adv(self, group_loss, group_count):
-        adjusted_loss = group_loss
-        if torch.all(self.adj>0):
-            adjusted_loss += self.adj/torch.sqrt(self.group_counts)
-        if self.normalize_loss:
-            adjusted_loss = adjusted_loss/(adjusted_loss.sum())
-        # denom = self.processed_data_counts + group_count
-        # denom += (denom == 0).float()
-        # prev_weight = self.processed_data_counts / denom
-        # curr_weight = group_count / denom
-        # #adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
-        # # if not (self.avg_group_loss==0)[0]:
-        # #     adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data+self.step_size*1*(1-(prev_weight*self.avg_group_loss.data + curr_weight*adjusted_loss.data)/self.avg_group_loss.data))
-        # # else:
-        # #     adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
-        # adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
-        # # adv_probs = torch.min(adv_probs, self.adv_trade_probs_max)
-        # # adv_probs = torch.max(adv_probs, self.adv_trade_probs_min)
-        # #adv_probs = self.adv_probs * torch.exp(self.step_size * adjusted_loss.data)
-        # adv_probs = adv_probs/(adv_probs.sum())
-
-        robust_loss = group_loss @ self.adv_probs
-        return robust_loss, self.adv_probs
-
-    def compute_adversarial_robust_loss_adv(self, group_loss,per_sample_losses):
-        #adjusted_loss = group_loss
-        # if torch.all(self.adj>0):
-        #     adjusted_loss += self.adj/torch.sqrt(self.group_counts)
-        # if self.normalize_loss:
-        #     adjusted_loss = adjusted_loss/(adjusted_loss.sum())
-        # adv_trade_probs = self.adv_trade_probs * torch.exp(-self.step_size*adjusted_loss.data)
-        # adv_trade_probs = torch.min(self.adv_trade_probs,self.adv_trade_probs_max)
-        # adv_trade_probs = torch.max(self.adv_trade_probs, self.adv_trade_probs_min)
-        # adv_trade_probs = self.adv_trade_probs/(self.adv_trade_probs.sum())
-
-
-        robust_loss = group_loss @ (self.adv_trade_probs*4)
-        return robust_loss, self.adv_trade_probs
-
 
 
     def compute_robust_loss_btl(self, group_loss, group_count):
@@ -319,14 +199,13 @@ class LossComputer:
         last_idx = mask.sum()
         weights[last_idx] = 1 - weights.sum()
         weights = sorted_frac*self.min_var_weight + weights*(1-self.min_var_weight)
-
         robust_loss = sorted_loss @ weights
-
         # sort the weights back
         _, unsort_idx = sorted_idx.sort()
         unsorted_weights = weights[unsort_idx]
         return robust_loss, unsorted_weights
 
+    #compute group loss
     def compute_group_avg(self, losses, group_idx):
         # compute observed counts and mean loss for each group
         group_map = (group_idx == torch.arange(self.n_groups).unsqueeze(1).long().to(self.device)).float()
@@ -335,12 +214,14 @@ class LossComputer:
         group_loss = (group_map @ losses.view(-1))/group_denom
         return group_loss, group_count
 
+    #update weights
     def update_exp_avg_loss(self, group_loss, group_count):
         prev_weights = (1 - self.gamma*(group_count>0).float()) * (self.exp_avg_initialized>0).float()
         curr_weights = 1 - prev_weights
         self.exp_avg_loss = self.exp_avg_loss * prev_weights + group_loss*curr_weights
         self.exp_avg_initialized = (self.exp_avg_initialized>0) + (group_count>0)
 
+    #initialize
     def reset_stats(self):
         self.processed_data_counts = torch.zeros(self.n_groups).to(self.device)
         self.update_data_counts = torch.zeros(self.n_groups).to(self.device)
@@ -351,7 +232,6 @@ class LossComputer:
         self.avg_actual_loss = 0.
         self.avg_acc = 0.
         self.batch_count = 0.
-        #self.adv_probs = torch.ones(self.n_groups).to(self.device) / self.n_groups
 
     def update_stats(self, actual_loss, group_loss, group_acc, group_count, weights=None):
         # avg group loss
@@ -433,7 +313,6 @@ class LossComputer:
 
     def turn_robust(self):
         self.is_robust=False
-
 
 def adjust_learning_rate(optimizer, epoch):
     """decrease the learning rate"""
