@@ -24,19 +24,11 @@ class SkinDataset(ConfounderDataset):
         self.model_type = model_type
         self.augment_data = augment_data
 
-        # self.data_dir = os.path.join(
-        #     self.root_dir,
-        #     'data',
-        #     '_'.join([self.target_name] + self.confounder_names))
-        #
-        # if not os.path.exists(self.data_dir):
-        #     raise ValueError(
-        #         f'{self.data_dir} does not exist yet. Please generate the dataset first.')
         self.data_dir=''
 
         # Read in metadata
         self.metadata_df = pd.read_csv(
-            os.path.join('/share_data/dataset/gdroskin', 'metadata4.csv'))
+            os.path.join('/data', 'metadata.csv'))
 
         # Get the y values
         self.y_array = self.metadata_df['y'].values

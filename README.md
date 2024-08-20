@@ -17,8 +17,6 @@ pip install -r requirements.txt
 
 
 ## Dataset
-- Waterbirds: see instructions [here](https://github.com/kohpangwei/group_DRO#waterbirds).
-- CelebA: see instruction [here](https://github.com/kohpangwei/group_DRO#celeba).
 
 Waterbirds:
 For running the codes, following files/folders should be in the [root_dir]/cub directory:
@@ -56,8 +54,7 @@ python run_expt.py -s confounder -d CelebA -t Blond_Hair -c Male --lr 0.0001 --b
 ```
 
 
-## Acknowledgement
-This repo is built upon [Group-DRO](https://github.com/kohpangwei/group_DRO). We thank the authors for their great work.
+
 
 
 

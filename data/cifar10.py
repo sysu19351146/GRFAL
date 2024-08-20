@@ -24,16 +24,8 @@ class CifarDataset(ConfounderDataset):
         self.model_type = model_type
         self.augment_data = augment_data
 
-        # self.data_dir = os.path.join(
-        #     self.root_dir,
-        #     'data',
-        #     '_'.join([self.target_name] + self.confounder_names))
-        #
-        # if not os.path.exists(self.data_dir):
-        #     raise ValueError(
-        #         f'{self.data_dir} does not exist yet. Please generate the dataset first.')
         self.data_dir=''
-        cifar10_dir = os.path.join('/share_data/dataset/CIFAR10', 'cifar-10-batches-py')
+        cifar10_dir = os.path.join('/data' 'cifar-10-batches-py')
         train_data = []
         train_labels = []
         for batch in range(1, 6):
@@ -114,22 +106,14 @@ def get_transform_skin(model_type, train, augment_data):
     if (not train) or (not augment_data):
         # Resizes the image to a slightly larger square then crops the center.
         transform = transforms.Compose([
-            # transforms.Resize((int(target_resolution[0]*scale), int(target_resolution[1]*scale))),
-            # transforms.CenterCrop(target_resolution),
+
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            #transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
         ])
     else:
         transform = transforms.Compose([
-            # transforms.RandomResizedCrop(
-            #     target_resolution,
-            #     scale=(0.7, 1.0),
-            #     ratio=(0.75, 1.3333333333333333),
-            #     interpolation=2),
-            # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            #transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
     return transform

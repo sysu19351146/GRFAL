@@ -23,20 +23,20 @@ def main():
     parser.add_argument('-t', '--target_name')
     parser.add_argument('-c', '--confounder_names', nargs='+')
     # Resume
-    parser.add_argument('--resume', default=False, action='store_true')
-    parser.add_argument('--pth_name', default='', type=str)
+    parser.add_argument('--resume', default=False, action='store_true')  #is resume
+    parser.add_argument('--pth_name', default='', type=str)              #model path
     # Label shifts
     parser.add_argument('--minority_fraction', type=float)
     parser.add_argument('--imbalance_ratio', type=float)
     # Data
     parser.add_argument('--fraction', type=float, default=1.0)
     parser.add_argument('--root_dir', default=None)
-    parser.add_argument('--reweight_groups', action='store_true', default=False)
-    parser.add_argument('--augment_data', action='store_true', default=False)
-    parser.add_argument('--val_fraction', type=float, default=0.1)
-    parser.add_argument('--class_num', default=2, type=int)
+    parser.add_argument('--reweight_groups', action='store_true', default=False)   #need UW strategy
+    parser.add_argument('--augment_data', action='store_true', default=False)      #need aug
+    parser.add_argument('--val_fraction', type=float, default=0.1)                 #val fraction
+    parser.add_argument('--class_num', default=2, type=int)                        #number of class
     # Objective
-    parser.add_argument('--robust', default=False, action='store_true')
+    parser.add_argument('--robust', default=False, action='store_true')           #need group-dro framework
     parser.add_argument('--alpha', type=float, default=0.2)
     parser.add_argument('--generalization_adjustment', default="0.0")
     parser.add_argument('--automatic_adjustment', default=False, action='store_true')
@@ -74,12 +74,12 @@ def main():
     #training
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--show_progress', default=False, action='store_true')
-    parser.add_argument('--train_type',  default="erm")
-    parser.add_argument('--test_type', default="erm")
-    parser.add_argument('--only_test', default=False, action='store_true')
+    parser.add_argument('--train_type',  default="erm")   #training type range from[erm,trades,BAT,CFA,WAT,FAT,pgd]
+    parser.add_argument('--test_type', default="erm")     #range from[erm,pgd,AA]
+    parser.add_argument('--only_test', default=False, action='store_true')   #not training
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--early_stop', default=False, action='store_true')
-    parser.add_argument('--is_combine', default=False, action='store_true')
+    parser.add_argument('--is_combine', default=False, action='store_true')  #freeze model
 
 
     #adversarial attack
@@ -94,7 +94,7 @@ def main():
     parser.add_argument('--zennit_show',  default=False, action='store_true')
 
     #hyperparamters for other mdoels
-    parser.add_argument('--beta', default=1.0, type=float)
+    parser.add_argument('--beta', default=6.0, type=float)                 #trades
     parser.add_argument('--eta', default=0.1, type=float)
     parser.add_argument('--tau', default=0.03, type=float)
     parser.add_argument('--lr_tau', default=0.004, type=float)
@@ -103,12 +103,12 @@ def main():
     parser.add_argument('--l2_norm', default=0.0, type=float)
 
     #GDRO-AT
-    parser.add_argument('--limit_nat', default=False, action='store_true')
-    parser.add_argument('--limit_adv', default=False, action='store_true')
-    parser.add_argument('--train_grad', default=False, action='store_true')
-    parser.add_argument('--trades_new', default=False, action='store_true')
-    parser.add_argument('--limit_eps', default=0.2, type=float)
-    parser.add_argument('--robust_step_size', default=0.01, type=float)
+    parser.add_argument('--limit_nat', default=False, action='store_true')            #nat disitributional constraint
+    parser.add_argument('--limit_adv', default=False, action='store_true')            #adv disitributional constraint
+    parser.add_argument('--train_grad', default=False, action='store_true')           #WULG
+    parser.add_argument('--trades_new', default=False, action='store_true')           #GDRO-AT
+    parser.add_argument('--limit_eps', default=0.2, type=float)                       #constraint eps
+    parser.add_argument('--robust_step_size', default=0.01, type=float)               #update step size
 
 
 

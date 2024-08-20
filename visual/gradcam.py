@@ -46,28 +46,13 @@ def gradcam_visual(model,image_path,random_noise,y):
 def show_visual_model(model,args):
     model_name=['Test Image','BAT','WAT','FAT','CFA','GDRO']
     name_list = ['BAT','WAT','FAT','CFA','GDRO']
-    # net_paths = [
-    #     "/share_data/cap_udr_test/"+"125-CUB-BAT-pgd-reTrue-roFalse-0.00010.00196/"+"robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/"+"123-CUB-WAT-pgd-reTrue-roFalse-0.00010.00196/"+"robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/"+"113-CUB-FAT-pgd-reTrue-roFalse-0.00010.00196/"+"robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/"+"137-CUB-CFA-pgd-reTrue-roFalse-0.00010.00196/"+"robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/"+"90-CUB-trades-pgd-reTrue-roTrue-0.00010.00196/"+"robustnew10best_test_model.pth",
-    #     ]
-
-    # net_paths = [
-    #     "/share_data/cap_udr_test/" + "233-Skin-BAT-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/" + "255-Skin-WAT-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/" + "232-Skin-FAT-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/" + "253-Skin-CFA-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
-    #     "/share_data/cap_udr_test/" + "227-Skin-trades-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
-    # ]
 
     net_paths = [
-        "/share_data/cap_udr_test/" + "112-CelebA-BAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
-        "/share_data/cap_udr_test/" + "111-CelebA-WAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
-        "/share_data/cap_udr_test/" + "115-CelebA-FAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
-        "/share_data/cap_udr_test/" + "110-CelebA-CFA-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
-        "/share_data/cap_udr_test/" + "208-CelebA-trades-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
+ "112-CelebA-BAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
+ "111-CelebA-WAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
+"115-CelebA-FAT-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
+"110-CelebA-CFA-pgd-reTrue-roFalse-0.00010.00196/" + "robustnew10best_test_model.pth",
+"208-CelebA-trades-pgd-reTrue-roTrue-0.00010.00196/" + "robustnew10best_test_model.pth",
     ]
 
     gpu_list = [int(i) for i in args.gpu.strip().split(",")]
@@ -81,66 +66,35 @@ def show_visual_model(model,args):
         model = model.to(args.device)
         model_list.append(model)
 
-    #f1=pd.read_csv('cub/data/waterbird_complete95_forest2water2/metadata.csv')
     f1 = pd.read_csv('celebA/data/list_attr_celeba.csv')
-    #f1 = pd.read_csv('/share_data/dataset/gdroskin/metadata4.csv')
+
     for kk in range(50):
-    #     image_path_list=['008.Rhinoceros_Auklet/Rhinoceros_Auklet_0005_2111.jpg',
-    # '009.Brewer_Blackbird/Brewer_Blackbird_0137_2680.jpg',
-    # '009.Brewer_Blackbird/Brewer_Blackbird_0041_2653.jpg',
-    # '007.Parakeet_Auklet/Parakeet_Auklet_0042_795961.jpg',
-    # '008.Rhinoceros_Auklet/Rhinoceros_Auklet_0013_797537.jpg',
-    # ]
+
         mm=kk+1
-        # image_path_list = [f1.iloc[mm*5]['img_filename'],
-        #                    f1.iloc[mm*5+1]['img_filename'],
-        #                    f1.iloc[mm*5+2]['img_filename'],
-        #                    f1.iloc[mm*5+3]['img_filename'],
-        #                    f1.iloc[mm*5+4]['img_filename'],
-        #                    ]
+
         image_path_list = [f1.iloc[mm * 5]['image_id'],
                        f1.iloc[mm * 5 + 1]['image_id'],
                        f1.iloc[mm * 5 + 2]['image_id'],
                        f1.iloc[mm * 5 + 3]['image_id'],
                        f1.iloc[mm * 5 + 4]['image_id'],
                        ]
-        # label_list=[f1.iloc[mm*5]['y'],
-        #                    f1.iloc[mm*5+1]['y'],
-        #                    f1.iloc[mm*5+2]['y'],
-        #                    f1.iloc[mm*5+3]['y'],
-        #                    f1.iloc[mm*5+4]['y']]
-
         label_list = [(f1.iloc[mm * 5]['Blond_Hair']==1)*1,
                       (f1.iloc[mm * 5 + 1]['Blond_Hair']==1)*1,
                        (f1.iloc[mm * 5 + 2]['Blond_Hair']==1)*1,
                         (f1.iloc[mm * 5 + 3]['Blond_Hair']==1)*1,
                          (f1.iloc[mm * 5 + 4]['Blond_Hair']==1)*1]
 
-        # label_list = [1,
-        #               0,
-        #               0,
-        #               1,
-        #               1]
         origin_list=[]
         heatmap_list=[]
         result_list=[]
         heatmap2_list = []
         result2_list = []
-        #torch_img = torch.from_numpy(np.asarray(PIL.Image.open('cub/data/waterbird_complete95_forest2water2/'+image_path_list[0]))).permute(2, 0, 1).unsqueeze(0).float().div(255).cuda()
-        #torch_img = torch.from_numpy(np.asarray(PIL.Image.open(image_path_list[0]))).permute(2, 0,1).unsqueeze(0).float().div(255).cuda()
         torch_img = torch.from_numpy(np.asarray(PIL.Image.open('celebA/data/img_align_celeba/' + image_path_list[0]))).permute(2, 0,1).unsqueeze(0).float().div(255).cuda()
         torch_img = F.upsample(torch_img, size=(224, 224), mode='bilinear', align_corners=False)
         random_noise = torch.FloatTensor(torch_img.shape).uniform_(-0.0001, 0.0001).cuda()
         for i in range(len(net_paths)):
             net_path = net_paths[i]
-            # ckpt = torch.load(
-            #     net_path,
-            #     map_location='cpu')
 
-            # model =torch.load(net_path, map_location=torch.device('cpu'))
-            #
-            #
-            # model = model.to(args.device)
             model=model_list[i]
             torch.cuda.set_device(args.device)
             heatmap_list_ = []
@@ -148,12 +102,11 @@ def show_visual_model(model,args):
             heatmap2_list_ = []
             result2_list_ = []
             for j in range(len(image_path_list)):
-                #origin,heat,result,heat2,result2=gradcam_visual(model,'cub/data/waterbird_complete95_forest2water2/'+image_path_list[j],random_noise,label_list[j])
+
                 origin, heat, result, heat2, result2 = gradcam_visual(model,
                                                                       'celebA/data/img_align_celeba/' +
                                                                       image_path_list[j], random_noise, label_list[j])
 
-                #origin, heat, result, heat2, result2 = gradcam_visual(model, image_path_list[j], random_noise,label_list[j])
                 heatmap_list_.append(heat.permute(1, 2, 0).numpy())
                 result_list_.append(result.permute(1, 2, 0).numpy())
                 heatmap2_list_.append(heat2.permute(1, 2, 0).numpy())
@@ -166,21 +119,6 @@ def show_visual_model(model,args):
             print(model_name[i+1])
 
 
-
-        # fig, axes = plt.subplots(5, 6, figsize=(18, 15))
-        #
-        #
-        # # 设置每个子图
-        # for i in range(len(image_path_list)):
-        #     img = origin_list[i]
-        #     axes[i, 0].imshow(img)
-        #     axes[i, 0].axis('off')  # 隐藏坐标轴
-        #     # axes[i, 0].set_title(image_path_list[i][-16:-4], fontsize=15)
-        #     for j in range(len(net_paths)):
-        #         img=result_list[j][i]
-        #         axes[i, j+1].imshow(img)
-        #         axes[i, j+1].axis('off')  # 隐藏坐标轴
-
         for i in range(len(image_path_list)):
             img = origin_list[i]
             plt.axis('off')
@@ -192,106 +130,6 @@ def show_visual_model(model,args):
                 plt.axis('off')
                 plt.imshow(img)
                 plt.savefig('zenunic/' + model_name[j+1] + '/{}_{}.png'.format(i,mm))
-
-
-
-
-        # 添加模型和测试图片的标签
-        # for ax, col in zip(axes[0], model_name):
-        #     # if col=='Test Image':
-        #     #     continue
-        #     ax.set_title(col, fontsize=15)
-        #
-        # plt.savefig('zenuni/model_comparison{}.png'.format(mm), dpi=600)
-        #
-        # fig_heat, axes_heat = plt.subplots(5, 6, figsize=(18, 15))
-        #
-        # for i in range(len(image_path_list)):
-        #     img = origin_list[i]
-        #     axes_heat[i, 0].imshow(img)
-        #     axes_heat[i, 0].axis('off')  # 隐藏坐标轴
-        #     for j in range(len(net_paths)):
-        #         img = heatmap_list[j][i]
-        #         axes_heat[i, j + 1].imshow(img)
-        #         axes_heat[i, j + 1].axis('off')  # 隐藏坐标轴
-        #
-        # for ax, col in zip(axes_heat[0], model_name):
-        #     ax.set_title(col, fontsize=15)
-
-        # for i in range(len(image_path_list)):
-        #     for j in range(len(net_paths)):
-        #         img=heatmap_list[j][i]
-        #         plt.imshow(img)
-        #         plt.savefig('zenuni/' + model_name[j+1] + '/heat{}.png'.format(mm), dpi=600)
-
-        #plt.tight_layout()
-        # plt.savefig('zenuni/model_comparison_heat{}.png'.format(mm), dpi=600)
-        #
-        # fig, axes = plt.subplots(5, 6, figsize=(18, 15))
-        #
-        # # 设置每个子图
-        # for i in range(len(image_path_list)):
-        #     img = origin_list[i]
-        #     axes[i, 0].imshow(img)
-        #     axes[i, 0].axis('off')  # 隐藏坐标轴
-        #     # axes[i, 0].set_title(image_path_list[i][-16:-4], fontsize=15)
-        #     for j in range(len(net_paths)):
-        #         img = result2_list[j][i]
-        #         axes[i, j + 1].imshow(img)
-        #         axes[i, j + 1].axis('off')  # 隐藏坐标轴
-        #
-        # # 添加模型和测试图片的标签
-        # for ax, col in zip(axes[0], model_name):
-        #     # if col == 'Test Image':
-        #     #     continue
-        #     ax.set_title(col, fontsize=15)
-        #
-        # plt.savefig('zenunimart/model_comparison{}.png'.format(mm), dpi=600)
-        #
-        # fig_heat, axes_heat = plt.subplots(5, 6, figsize=(18, 15))
-        #
-        # for i in range(len(image_path_list)):
-        #     img = origin_list[i]
-        #     axes_heat[i, 0].imshow(img)
-        #     axes_heat[i, 0].axis('off')  # 隐藏坐标轴
-        #     for j in range(len(net_paths)):
-        #         img = heatmap2_list[j][i]
-        #         axes_heat[i, j + 1].imshow(img)
-        #         axes_heat[i, j + 1].axis('off')  # 隐藏坐标轴
-        #
-        # for ax, col in zip(axes_heat[0], model_name):
-        #     ax.set_title(col, fontsize=15)
-        #
-        # # plt.tight_layout()
-        # plt.savefig('zenunimart/model_comparison_heat{}.png'.format(mm), dpi=600)
-
-        # for i in range(len(image_path_list)):
-        #     img = origin_list[i]
-        #     plt.imshow(img)
-        #     plt.savefig('zenuni/'+model_name[0]+'/'+image_path_list[i][-16:-4]+'.png', dpi=600)
-        #     # axes[i, 0].set_title(image_path_list[i][-16:-4], fontsize=15)
-        #     for j in range(len(net_paths)):
-        #         img=result_list[j][i]
-        #         plt.imshow(img)
-        #         plt.savefig('zenuni/' + model_name[j+1] + '/' + image_path_list[i][-16:-4] + '.png', dpi=600)
-        #
-        # for i in range(len(image_path_list)):
-        #     for j in range(len(net_paths)):
-        #         img=heatmap_list[j][i]
-        #         plt.imshow(img)
-        #         plt.savefig('zenuni/' + model_name[j+1] + '/heat' + image_path_list[i][-16:-4] + '.png', dpi=600)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -427,28 +265,7 @@ class GradCAM(object):
                                                               F.softmax(self.model_arch(x), dim=1))
 
 
-        #random_noise = torch.FloatTensor(X_pgd.shape).uniform_(-random_init, random_init).cuda()
-        #X_pgd = Variable(X_pgd.data + random_noise, requires_grad=True)
 
-        # for _ in range(10):
-        #     opt = torch.optim.SGD([X_pgd], lr=1e-3)
-        #     opt.zero_grad()
-        #
-        #     with torch.enable_grad():
-        #         loss = nn.CrossEntropyLoss()(self.model_arch(X_pgd), class_idx)
-        #     loss.backward()
-        #     eta = step_size * X_pgd.grad.data.sign()
-        #     X_pgd = Variable(X_pgd.data + eta, requires_grad=True)
-        #     eta = torch.clamp(X_pgd.data - x.data, -epsilon, epsilon)
-        #     X_pgd = Variable(x.data + eta, requires_grad=True)
-        #     X_pgd = Variable(torch.clamp(X_pgd, 0, 1), requires_grad=True)
-        #
-        # loss_robust=nn.CrossEntropyLoss()(self.model_arch(X_pgd), class_idx)
-        # logit = self.model_arch(input)
-        # if class_idx is None:
-        #     score = logit[:, logit.max(1)[-1]].squeeze()
-        # else:
-        #     score = logit[:, class_idx].squeeze()
         score=loss_robust
 
         self.model_arch.zero_grad()
@@ -545,60 +362,7 @@ class GradCAM2(object):
         """
         b, c, h, w = input.size()
         self.model_arch.eval()
-        # x=input
-        # x_adv = x.detach()
-        # random_init = 0.0001
-        # epsilon = 0.00196
-        # step_size = epsilon / 4
-        # num_steps=10
-        # x_adv = Variable(x.data, requires_grad=True)
-        # criterion_kl2 = nn.KLDivLoss(reduction='none')
-        # criterion_kl = nn.KLDivLoss(size_average=False)
-        # loss_trade = torch.nn.CrossEntropyLoss(reduction='none')
-        # for k in range(num_steps):
-        #     x_adv.requires_grad_()
-        #     output = self.model_arch(x_adv)
-        #     self.model_arch.zero_grad()
-        #     with torch.enable_grad():
-        #         loss_adv = nn.KLDivLoss(size_average=False)(F.log_softmax(output, dim=1),
-        #                                                         F.softmax(self.model_arch(x.detach().clone()), dim=1))
-        #
-        #     loss_adv.backward()
-        #     eta = step_size * x_adv.grad.sign()
-        #     x_adv = x_adv.detach() + eta
-        #     x_adv = torch.min(torch.max(x_adv, x - epsilon), x + epsilon)
-        #     x_adv = torch.clamp(x_adv, 0.0, 1.0)
-        #
-        # self.model_arch.zero_grad()
-        # self.model_arch.train()
-        #
-        # # inputs=turn_batch2one_inf(inputs,label,0.3,net,20,Loss,optimizer,4)
-        #
-        # x_adv = Variable(torch.clamp(x_adv, -3, 3), requires_grad=False)
-        # self.model_arch.zero_grad()
-        # outputs = self.model_arch(x)
-        # loss_nat = loss_trade(outputs, class_idx)
-        # loss_robust = (1.0 / 1) * criterion_kl(F.log_softmax(self.model_arch(x_adv), dim=1),
-        #                                                       F.softmax(self.model_arch(x), dim=1))
 
-
-        #random_noise = torch.FloatTensor(X_pgd.shape).uniform_(-random_init, random_init).cuda()
-        #X_pgd = Variable(X_pgd.data + random_noise, requires_grad=True)
-
-        # for _ in range(10):
-        #     opt = torch.optim.SGD([X_pgd], lr=1e-3)
-        #     opt.zero_grad()
-        #
-        #     with torch.enable_grad():
-        #         loss = nn.CrossEntropyLoss()(self.model_arch(X_pgd), class_idx)
-        #     loss.backward()
-        #     eta = step_size * X_pgd.grad.data.sign()
-        #     X_pgd = Variable(X_pgd.data + eta, requires_grad=True)
-        #     eta = torch.clamp(X_pgd.data - x.data, -epsilon, epsilon)
-        #     X_pgd = Variable(x.data + eta, requires_grad=True)
-        #     X_pgd = Variable(torch.clamp(X_pgd, 0, 1), requires_grad=True)
-        #
-        # loss_robust=nn.CrossEntropyLoss()(self.model_arch(X_pgd), class_idx)
         logit = self.model_arch(input)
         if class_idx is None:
             score = logit[:, logit.max(1)[-1]].squeeze()
