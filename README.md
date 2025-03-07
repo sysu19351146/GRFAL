@@ -1,5 +1,5 @@
 # Improving Group Robust Fairness in Subpopulation Shifts Datasets through Group Distributionally Robust Optimization
-This is the official implementation of the paper "Improving Robust Fairness in Subpopulation Shifts Datasets through Group Distributionally Robust Optimization"
+This is the official implementation of the paper "Improving Group Robust Fairness in Subpopulation Shifts Datasets through Group Distributionally Robust Optimization"
 ![image](model.jpg)
 
 ## Abstract
